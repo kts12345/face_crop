@@ -1,3 +1,28 @@
+########################################################
+# 유틸
+from PIL import ExifTags
+from PIL import Image
+
+def open_with_exif(filepath):
+    image=Image.open(filepath)
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation]=='Orientation':
+                break
+        
+        exif = image._getexif()
+    
+        if exif[orientation] == 3:
+            image=image.rotate(180, expand=True)
+        elif exif[orientation] == 6:
+            image=image.rotate(270, expand=True)
+        elif exif[orientation] == 8:
+            image=image.rotate(90, expand=True)
+        return image
+    except:
+        return image
+
+
 #########################################################
 # 처리할 이미지 리스트 추리기
 
@@ -83,7 +108,7 @@ class RectDS(Dataset):
         path = self.imgs[idx]
         if self.img_base_dir:
             path = Path(self.img_base_dir) / path
-        im = Image.open(path).convert('RGB')
+        im = open_with_exif(path).convert('RGB')
         r, im = RectDS.to_rect(im, self.rect_size) 
         return str(path), r, np.array(im)
     
@@ -119,7 +144,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 def crop_face(row, scale = 0.9, randomness=False):
-    im = Image.open(row['path']).convert('RGB')
+    im = open_with_exif(row['path']).convert('RGB')
     #display(im.size)
     #display(row)
     idx = np.stack(row['score']).mean(axis=-1).argmax()
@@ -160,6 +185,7 @@ def save_croped_face(out_dir, df_face_info, face_resize, scale):
     oks = []
     
     for idx, row in tqdm(df_face_info.iterrows(), total=len(df_face_info)):
+        im = crop_face(row, scale)
         try:
             im = crop_face(row, scale)
         except:
