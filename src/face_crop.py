@@ -2,26 +2,11 @@
 # 유틸
 from PIL import ExifTags
 from PIL import Image
+from PIL import ImageOps
 
 def open_with_exif(filepath):
-    image=Image.open(filepath)
-    try:
-        for orientation in ExifTags.TAGS.keys():
-            if ExifTags.TAGS[orientation]=='Orientation':
-                break
-        
-        exif = image._getexif()
-    
-        if exif[orientation] == 3:
-            image=image.rotate(180, expand=True)
-        elif exif[orientation] == 6:
-            image=image.rotate(270, expand=True)
-        elif exif[orientation] == 8:
-            image=image.rotate(90, expand=True)
-        return image
-    except:
-        return image
-
+    image = Image.open(filepath)
+    return ImageOps.exif_transpose(image)
 
 #########################################################
 # 처리할 이미지 리스트 추리기
